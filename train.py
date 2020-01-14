@@ -23,7 +23,7 @@ PARSER.add_argument('train_json', metavar='TRAIN',
                     help='path to train json')
 PARSER.add_argument('val_json', metavar='VAL',
                     help='path to val json')
-
+# asd
 def main():
 
     global args, best_prec1
