@@ -26,17 +26,16 @@ parser.add_argument('train_json', metavar='TRAIN',
 parser.add_argument('val_json', metavar='VAL',
                     help='path to val json')
 
+
 def main():
 
-    global args,best_prec1
-
+    global args, best_prec1
     best_prec1 = 1e6
-
     args = parser.parse_args()
     args.lr = 1e-4
-    args.batch_size    = 26
-    args.decay         = 5*1e-4
-    args.start_epoch   = 0
+    args.batch_size = 26
+    args.decay = 5*1e-4
+    args.start_epoch = 0
     args.epochs = 1000
     args.workers = 4
     args.seed = int(time.time())
@@ -55,7 +54,7 @@ def main():
     criterion = nn.MSELoss(size_average=False).cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr,
-                                    weight_decay=args.decay)
+                                 weight_decay=args.decay)
 
     for epoch in range(args.start_epoch, args.epochs):
         train(train_list, model, criterion, optimizer, epoch)
@@ -69,6 +68,7 @@ def main():
             'state_dict': model.state_dict(),
         }, is_best)
 
+
 def train(train_list, model, criterion, optimizer, epoch):
 
     losses = AverageMeter()
@@ -77,28 +77,28 @@ def train(train_list, model, criterion, optimizer, epoch):
 
     train_loader = torch.utils.data.DataLoader(
         dataset.listDataset(train_list,
-                       shuffle=True,
-                       transform=transforms.Compose([
-                       transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-                   ]),
-                       train=True,
-                       seen=model.seen,
-                       batch_size=args.batch_size,
-                       num_workers=args.workers),
+                            shuffle=True,
+                            transform=transforms.Compose([
+                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                            std=[0.229, 0.224, 0.225]),
+                            ]),
+                            train=True,
+                            seen=model.seen,
+                            batch_size=args.batch_size,
+                            num_workers=args.workers),
         batch_size=args.batch_size)
-    print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
+    print('epoch %d, processed %d samples, lr %.10f' %
+          (epoch, epoch * len(train_loader.dataset), args.lr))
 
     model.train()
     end = time.time()
 
-    for i,(img, target)in enumerate(train_loader):
+    for i, (img, target)in enumerate(train_loader):
         data_time.update(time.time() - end)
 
         img = img.cuda()
         img = Variable(img)
-        output = model(img)[:,0,:,:]
-
+        output = model(img)[:, 0, :, :]
         target = target.type(torch.FloatTensor).cuda()
         target = Variable(target)
 
@@ -118,32 +118,33 @@ def train(train_list, model, criterion, optimizer, epoch):
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   .format(
-                   epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses))
+                      epoch, i, len(train_loader), batch_time=batch_time,
+                      data_time=data_time, loss=losses))
+
 
 def validate(val_list, model, criterion):
-    print ('begin val')
+    print('begin val')
     val_loader = torch.utils.data.DataLoader(
-    dataset.listDataset(val_list,
-                   shuffle=False,
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-                   ]),  train=False),
-    batch_size=1)
+        dataset.listDataset(val_list,
+                            shuffle=False,
+                            transform=transforms.Compose([
+                                transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                            std=[0.229, 0.224, 0.225]),
+                            ]),  train=False),
+        batch_size=1)
 
     model.eval()
 
     mae = 0
 
-    for i,(img, target) in enumerate(val_loader):
-        h,w = img.shape[2:4]
+    for i, (img, target) in enumerate(val_loader):
+        h, w = img.shape[2:4]
         h_d = h/2
         w_d = w/2
-        img_1 = Variable(img[:,:,:h_d,:w_d].cuda())
-        img_2 = Variable(img[:,:,:h_d,w_d:].cuda())
-        img_3 = Variable(img[:,:,h_d:,:w_d].cuda())
-        img_4 = Variable(img[:,:,h_d:,w_d:].cuda())
+        img_1 = Variable(img[:, :, :h_d, :w_d].cuda())
+        img_2 = Variable(img[:, :, :h_d, w_d:].cuda())
+        img_3 = Variable(img[:, :, h_d:, :w_d].cuda())
+        img_4 = Variable(img[:, :, h_d:, w_d:].cuda())
         density_1 = model(img_1).data.cpu().numpy()
         density_2 = model(img_2).data.cpu().numpy()
         density_3 = model(img_3).data.cpu().numpy()
@@ -155,12 +156,14 @@ def validate(val_list, model, criterion):
 
     mae = mae/len(val_loader)
     print(' * MAE {mae:.3f} '
-              .format(mae=mae))
+          .format(mae=mae))
 
     return mae
 
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -175,6 +178,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
 
 if __name__ == '__main__':
     main()
