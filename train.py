@@ -1,37 +1,34 @@
 import sys
 import os
-
 import warnings
-
-from model import CANNet
-
-from utils import save_checkpoint
+import argparse
+import json
+import time
+import cv2
+import numpy as np
 
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 
-import numpy as np
-import argparse
-import json
-import cv2
+from model import CANNet
 import dataset
-import time
+from utils import save_checkpoint
 
-parser = argparse.ArgumentParser(description='PyTorch CANNet')
 
-parser.add_argument('train_json', metavar='TRAIN',
+PARSER = argparse.ArgumentParser(description='PyTorch CANNet')
+
+PARSER.add_argument('train_json', metavar='TRAIN',
                     help='path to train json')
-parser.add_argument('val_json', metavar='VAL',
+PARSER.add_argument('val_json', metavar='VAL',
                     help='path to val json')
-
 
 def main():
 
     global args, best_prec1
     best_prec1 = 1e6
-    args = parser.parse_args()
+    args = PARSER.parse_args('train.json val.json'.split())
     args.lr = 1e-4
     args.batch_size = 26
     args.decay = 5*1e-4
@@ -45,13 +42,13 @@ def main():
     with open(args.val_json, 'r') as outfile:
         val_list = json.load(outfile)
 
-    torch.cuda.manual_seed(args.seed)
+    torch.manual_seed(args.seed)
 
     model = CANNet()
 
-    model = model.cuda()
+    model = model.cpu()
 
-    criterion = nn.MSELoss(size_average=False).cuda()
+    criterion = nn.MSELoss(size_average=False).cpu()
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr,
                                  weight_decay=args.decay)
@@ -96,10 +93,10 @@ def train(train_list, model, criterion, optimizer, epoch):
     for i, (img, target)in enumerate(train_loader):
         data_time.update(time.time() - end)
 
-        img = img.cuda()
+        img = img.cpu()
         img = Variable(img)
         output = model(img)[:, 0, :, :]
-        target = target.type(torch.FloatTensor).cuda()
+        target = target.type(torch.FloatTensor).cpu()
         target = Variable(target)
 
         loss = criterion(output, target)
@@ -111,7 +108,6 @@ def train(train_list, model, criterion, optimizer, epoch):
 
         batch_time.update(time.time() - end)
         end = time.time()
-
         if i % args.print_freq == 0:
             print('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -141,10 +137,10 @@ def validate(val_list, model, criterion):
         h, w = img.shape[2:4]
         h_d = h/2
         w_d = w/2
-        img_1 = Variable(img[:, :, :h_d, :w_d].cuda())
-        img_2 = Variable(img[:, :, :h_d, w_d:].cuda())
-        img_3 = Variable(img[:, :, h_d:, :w_d].cuda())
-        img_4 = Variable(img[:, :, h_d:, w_d:].cuda())
+        img_1 = Variable(img[:, :, :h_d, :w_d].cpu())
+        img_2 = Variable(img[:, :, :h_d, w_d:].cpu())
+        img_3 = Variable(img[:, :, h_d:, :w_d].cpu())
+        img_4 = Variable(img[:, :, h_d:, w_d:].cpu())
         density_1 = model(img_1).data.cpu().numpy()
         density_2 = model(img_2).data.cpu().numpy()
         density_3 = model(img_3).data.cpu().numpy()

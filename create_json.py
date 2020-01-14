@@ -3,7 +3,11 @@ from os.path import join
 import glob
 from sklearn.model_selection import train_test_split
 
-if __name__ == '__main__':
+def main():
+    '''
+    main function
+    creat json file contains paths of images
+    '''
     # path to folder that contains images
     img_folder = '../ShanghaiTech_Crowd_Counting_Dataset/part_B_final/train_data/images'
 
@@ -16,12 +20,18 @@ if __name__ == '__main__':
 
     img_list = []
 
-    for img_path in glob.glob(join(img_folder,'*.jpg')):
+    for img_path in glob.glob(join(img_folder, '*.jpg')):
         img_list.append(img_path)
 
-   
-    img_train, img_val = train_test_split(img_list, test_size = 0.33, random_state = 0)
+    img_train, img_val = train_test_split(
+        img_list, test_size=0.3, random_state=0)
 
-    for path_json, content in dict({output_json: img_list, train_json: img_train, val_json: img_val}).items():
-        with open(path_json,'w') as f:
-            json.dump(content,f)
+    for path_json, content in dict({output_json: img_list,
+                                    train_json: img_train,
+                                    val_json: img_val}).items():
+        with open(path_json, 'w') as file:
+            json.dump(content, file)
+
+if __name__ == '__main__':
+    main()
+    
